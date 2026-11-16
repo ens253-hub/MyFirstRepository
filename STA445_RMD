@@ -1,0 +1,997 @@
+---
+title: "Assignment 2"
+author: "JR Soriano"
+date: "2026-10-07" 
+output: pdf_document
+---
+
+```{r setup, include=FALSE} 
+suppressPackageStartupMessages({
+  library(tidyverse, quietly = TRUE)
+  library(dplyr, quietly = TRUE) 
+  library(readxl, quietly = TRUE) 
+})
+library(tidyverse) 
+library(dplyr)
+library(readxl) 
+``` 
+
+## Exercise 1 
+
+Download from GitHub the data file by clicking on this link: Example_5.xls. Open it in Excel and figure out which sheet of data we should import into R. At the same time figure out how many initial rows need to be skipped. Import the data set into a data frame and show the structure of the imported data using the str() command. Make sure that your data has n = 31 observations and the three columns are appropriately named. If you make any modifications to the data file, comment on those modifications.
+
+```{r}
+data.1 <- read_excel("~/STA445/data-raw/Example_5.xls", sheet='RawData', range='A5:C36')  
+
+str(data.1) 
+```
+
+For this exercise, I added the example 5 document to a subfile in my STA445 directory called "data-raw". Then, I used the 
+path to put it in the read command. To skip uneccessary lines, I also added the range to read in the command as well. 
+
+## Exercise 2
+
+Download from GitHub the data file by clicking on this link: Example_3.xls. Import the data set into a data frame and show the structure of the imported data using the tail() command which shows the last few rows of a data table. Make sure the Tesla values are NA where appropriate and that both -9999 and NA are imported as NA values. If you make any modifications to the data file, comment on those modifications.
+
+```{r}
+data.2 <- read_excel("~/STA445/data-raw/Example_3.xls", sheet='data', range='A1:L34')  
+
+data.2 <- data.2 %>% mutate(drat = case_when( drat == -9999 ~ 'NA') 
+)
+tail(data.2) 
+```
+
+For this exercise, I imported the data through my STA445 directory and data-raw subdirectory. Then, I specifically
+picked the "data" sheet and picked the specific range. Then, I changed the -9999 to have NA. 
+
+---
+title: "Assignment 3"
+author: "JR Soriano"
+date: "2026-10-12"
+output: pdf_document
+---
+
+
+```{r setup, include=FALSE} 
+suppressPackageStartupMessages({
+  library(tidyverse, quietly = TRUE)
+  library(dplyr, quietly = TRUE) 
+})
+library(tidyverse) 
+library(dplyr)
+``` 
+
+## Exercise 1
+
+Write a function that calculates the density function of a Uniform continuous variable on the interval $\left(a,b\right)$. The uniform density function is defined as 
+
+$$
+f\left(x\right)=\begin{cases}
+    \frac{1}{b-a} & \;\;\;\textrm{if }a\le x\le b\\
+    0 & \;\;\;\textrm{otherwise}
+    \end{cases}
+$$
+
+Your goal for this exercise is to write a function `duniform(x, a, b)` that takes an arbitrary value of `x` and parameters `a` and `b` and returns the appropriate height of the density function ($1/(b-a)$). For various values of `x`, `a`, and `b`, demonstrate that your function returns the correct density value.
+
+### a) 
+
+Write your function without regard for it working with vectors of data. Demonstrate that it works by calling the function three times, once where $x< a$, once where $a < x < b$, and finally once where $b < x$.
+ 
+```{r}
+duniform <- function(x, a, b) { 
+  if (x >= a & b >= x) {
+    return(1/(b-a)) 
+  }else{
+    return(0) } 
+}
+
+duniform(x = 2, a = 3, b = 5) 
+duniform(x = 4, a = 3, b = 5) 
+duniform(x = 4, a = 3, b = 2) 
+```
+
+For subquestion a, I created separate if and else statements under the function. On the if function, I added that x is 
+greater A and B is greater than x, it will return the density equation. If it is anything else, then in the else function,
+I added that it will return zero. 
+
+### b) 
+
+Next lets improve our function to work correctly for a vector of x values. Modify your function in part (a) so that the core logic uses a for-loop statement and the loop moves through each element of x in succession. Since this is a bit more of a complex task, your function should look something like this: 
+
+```{r}
+duniform <- function(x, a, b){
+  output <- NULL
+  for( i in seq(x) ){ 
+    if( x[i] >= a & x[i] <= b ) {  
+      return(1/(b-a)) 
+    }else{
+    output[i] <- 0  
+    }
+  }
+  return(output)
+}
+
+
+```
+
+```{r}
+data.frame( x=seq(-1, 12, by=.001) ) %>%
+  mutate( y = duniform(x, 4, 8) ) %>%
+  ggplot( aes(x=x, y=y) ) +
+  geom_step()
+```
+
+For subquestion b, I put seq(x) after the i function to make it so that it will look at every element in x. Then, in the 
+if line, I repeated what I put in subquestin a, except for adding in the [i]. In the else function, I added the output[i]. 
+
+### c) 
+
+ Install the R package microbenchmark. We will use this to discover the average duration (time) your function takes to execute code.
+ 
+```{r, warning = FALSE}
+microbenchmark::microbenchmark( duniform( seq(-4,12,by=.0001), 4, 8), times=100) 
+```
+ 
+### d) 
+
+Instead of using a for loop, it might have been easier to use an ifelse() command, which inherently accepts vectors. Rewrite your function one last time, this time avoiding the for loop and instead introducing the vectorizable ifelse() command. Verify that your function works correctly by producing a plot of a uniform density. Finally, run the microbenchmark() code above again.
+
+```{r}
+duniform <- function(x, a, b) {
+  ifelse(a <= x & b >= x, 1/(b-a), 0) 
+}
+ 
+data.frame( x=seq(-1, 12, by=.001) ) %>%
+  mutate( y = duniform(x, 4, 8) ) %>%
+  ggplot( aes(x=x, y=y) ) +
+  geom_step()
+
+microbenchmark::microbenchmark( duniform( seq(-4,12,by=.0001), 4, 8), times=100) 
+```
+
+For subquestion d, I created the ifelse function by first putting expressions of x >= a and x <= b using the & in the 
+middle. Then, I added the equation in and the equation will work if the expressions are true. Finally, I added the 0 if the first two expressions were false. 
+
+### e) 
+
+Comment on Which version of your function was easier to write? Which ran faster?
+
+I felt like the ifelse function was easier to write because it's all on one line and you say the conditions and expressions
+right after. The ifelse function ran faster than the for loop function. 
+
+## Exercise 2 
+
+I very often want to provide default values to a parameter that I pass to a function. For example, it is so common for me to use the pnorm() and qnorm() functions on the standard normal, that R will automatically use mean=0 and sd=1 parameters unless you tell R otherwise. This was discussed significantly in the chapter above. To get that behavior, we can set the default parameter values in the definition of a function. When the function is called, the user specified value is used, but if none is specified, the defaults are used. Look at the help page for the functions dunif(), and notice that there are a number of default parameters.
+
+For your duniform() function provide default values of 0 and 1 for the arguments a and b. Demonstrate that your function is appropriately using the given default values by producing a graph of the density without specifying the a or b arguments.
+
+```{r}
+duniform1 <- function(x, a = 0, b = 1) {
+  ifelse(a <= x & b >= x, 1/(b-a), 0) 
+} 
+
+data.frame( x=seq(-1, 12, by=.001) ) %>%
+  mutate( y = duniform1(x) ) %>%
+  ggplot( aes(x=x, y=y) ) +
+  geom_step()
+
+```
+
+For this exercise, I set the default values for a and b with 0 and 1, putting it in the function() command. Then, I created
+the ifelse statement like normal. I produced the graph by adding the dataframe and only putting x in the mutation command
+which means it will give the default values I gave in the function. 
+
+## Exercise 3
+
+A common data processing step is to *standardize* numeric variables by subtracting the mean and dividing by the standard deviation. Mathematically, the standardized value is defined as
+
+$$
+z = \frac{x-\bar{x}}{s}
+$$
+
+where $\bar{x}$ is the mean and $s$ is the standard deviation. 
+
+### a) 
+
+Create a function that takes an input vector of numerical values and produces an output vector of the standardized values.
+
+```{r}
+standardize <- function(x) 
+  { 
+xbar <- mean(x)
+xsd <- sd(x) 
+output <- ((x - xbar / xsd))
+return(output)
+}
+
+standardize(100) 
+
+```
+
+For subquestion a, I made each vector solve the specific value I needed. Then, I created the output with those vectors. 
+I tested the output by putting a random number. 
+
+### b) 
+
+Apply this function to each numeric column in a data frame using the dplyr::across() or the dplyr::mutate_if() commands. This is often done in model algorithms that rely on numerical optimization methods to find a solution. By keeping the scales of different predictor covariates the same, the numerical optimization routines generally work better. Below is some code that should really help once your standardize() function is working. The graphs may not look very different, but pay attention to the x- and y-axis scales!
+
+```{r}
+data( 'iris' )
+# Graph the pre-transformed data.
+ggplot(iris, aes(x=Sepal.Length, y=Sepal.Width, color=Species)) +
+  geom_point() +
+  labs(title='Pre-Transformation')
+
+# Standardize all of the numeric columns
+# across() selects columns and applies a function to them
+# there column select requires a dplyr column select command such
+# as starts_with(), contains(), or where().  The where() command
+# allows us to use some logical function on the column to decide
+# if the function should be applied or not.
+iris.z <- iris %>% dplyr::mutate( across(where(is.numeric), standardize) )
+
+# Graph the post-transformed data.
+ggplot(iris.z, aes(x=Sepal.Length, y=Sepal.Width, color=Species)) +
+  geom_point() +
+  labs(title='Post-Transformation') 
+```
+
+For subquestion b, I applied my standardize function into the graph, which made a post-transformation graph. This
+post-transformation graph decreased the x-axis and y-axis. 
+
+## Exercise 4 
+
+```{r}
+FizzBuzz <- function(n) # Creates the function 
+{
+ output <- 1:n # Creates a vector from 1 to n
+for(i in output) # Creates the for loop
+{
+
+if(i %% 3 == 0 & i %% 5 == 0) output[i] <- 'Fizz-Buzz' # Anything divisible by 3 and 5 is subsituted with Fizz-Buzz
+if(i %% 3 == 0 & i %% 5 != 0) output[i] <- 'Fizz' # Anything divisible by 3 is subsituted with Fizz
+if(i %% 3 != 0 & i %% 5 == 0) output[i] <- 'Buzz' # Anything divisible by 5 is subsituted with Buzz
+if(i %% 3 != 0 & i %% 5 != 0) output[i] <- i # If it's not divisible by 3 and 5 it returns with i. 
+
+}
+ 
+print(paste(output, collapse=',')) # Squishes the strings together
+return(output) # Returns the output 
+
+}
+
+FizzBuzz(50)
+n <- 30
+```
+
+For exercise 4, I made it so that each line of code is divisible by a specific number and returns with the word. Anything
+that is divisible by 3 and 5 returns with Fizz-Buzz, anything divisible by 3 returns with Fizz, and anything that is 
+divisible by 5 returns with Buzz. 
+
+---
+title: "Assignment 4"
+name: "JR Soriano"
+date: "2026-10-21"
+output: pdf_document
+---
+```{r setup, include=FALSE} 
+suppressPackageStartupMessages({
+  library(tidyverse, quietly = TRUE)
+  library(dplyr, quietly = TRUE) 
+  library(stringr, quietly = TRUE)
+  library(refinr, quietly = TRUE) 
+})
+library(tidyverse) 
+library(dplyr)
+library(stringr)
+library(refinr) 
+``` 
+
+
+## Exercise 1
+
+### a) 
+
+This regular expression matches:
+
+Any string that detects lower-case ab. 
+
+
+```{r}
+strings <- c('abs', 'Absorb', 'Above', 'abyss')
+data.frame( string = strings ) %>%
+  mutate( result = str_detect(string, 'ab') )
+```
+
+### b) 
+
+This regular expression matches:
+
+Any string that detects only lower-case letters a or b. 
+
+```{r}
+strings <- c('alchemist', 'bonfire', 'ABove', 'DAD')
+data.frame( string = strings ) %>%
+  mutate( result = str_detect(string, '[ab]') )
+```
+
+### c)
+
+This regular expression matches:
+
+Any string that ignores detecting lower-case letters a or b. 
+
+```{r}
+strings <- c('Fire', 'alchemist', 'beard', 'Arizona')
+data.frame( string = strings ) %>%
+  mutate( result = str_detect(string, '^[ab]') )
+```
+
+### d) 
+
+This regular expression matches:
+
+Any string that detects any repetition of one or more digits, any white space and anything with only letters a or A.
+
+```{r}
+strings <- c('aA200', 'bb300', 'A A 200', '300 a A', 'A2012 Absolve', '2012 Honda') 
+data.frame( string = strings ) %>%
+  mutate( result = str_detect(string, '\\d+\\s[aA]') )
+```
+
+
+### e) 
+
+This regular expression matches:
+
+Any string that has more than one digit, strings with zero or any white spaces, and any string that contains
+letters a or A. 
+
+
+```{r}
+strings <- c('20 Absolve', 'The Honda is $30', 'Orange', 'Apple', '$3 Mandarins, $4 Apple Orange')
+data.frame( string = strings ) %>%
+  mutate( result = str_detect(string, '\\d+\\s*[aA]') )
+```
+
+### f)
+
+This regular expression matches:
+
+Any string that contains any character, with zero or any number of characters. 
+
+```{r}
+strings <- c('Food', 'The pizza is $20', '30', 'R', '')
+data.frame( string = strings ) %>%
+  mutate( result = str_detect(string, '.*') )
+```
+
+### g)
+
+This regular expression matches:
+
+Any string that detects, in the beginning input, any alphanumeric characters including upper case and lower case letters,
+and numbers 0-9, with exactly 2 repetitions of those alphanumeric characters in the beginning of the input, and letters
+that exactly match bar after the beginning input. 
+
+```{r}
+strings <- c('aabar', 'rabar', 'lbar', '2bar', '23bar', 'bar23')
+data.frame( string = strings ) %>%
+  mutate( result = str_detect(string, '^\\w{2}bar') )
+```
+
+### h)
+
+This regular expression matches:
+
+Any string that detects and captures the first group consisting of letters matching exactly foo, then exactly the period
+character, then the letters matching exactly bar OR captures the second group which detects, at the beginning of the input,
+any alphanumeric character or letter, with 2 repetitions of the alphanumeric needed, with the letters exactly matching bar
+afterwards. 
+
+```{r}
+strings <- c('23bar', 'foo.bar', 'fooabar', 'foo1bar', '4bar', '4abar')
+data.frame( string = strings ) %>%
+  mutate( result = str_detect(string, '(foo\\.bar)|(^\\w{2}bar)') )
+```
+
+## Exercise 2
+
+Produce a data frame with columns corresponding to the site, plot, camera, year, month, day, hour, minute, and second for these three file names. So we want to produce code that will create the data frame:
+
+```{r}
+file.names <- c( 'S123.P2.C10_20120621_213422.jpg',
+                 'S10.P1.C1_20120622_050148.jpg',
+                 'S187.P2.C2_20120702_023501.jpg')
+
+file.names2 <- str_replace_all(file.names, pattern = '\\_', replacement = '\\.') 
+file.names3 <- str_split_fixed(file.names2, pattern = '\\.', n = 6) 
+
+Year <- str_sub(file.names3[,4], start = 1, end = 4) 
+Month <- str_sub(file.names3[,4], start = 5, end = 6) 
+Day <- str_sub(file.names3[,4], start = 7, end = 8) 
+Hour <- str_sub(file.names3[,5], start = 1, end = 2) 
+Minute <- str_sub(file.names3[,5], start = 3, end = 4) 
+Seconds <- str_sub(file.names3[,5], start = 5, end = 6) 
+
+data.frame(
+  Site = file.names3[,1],
+  Plot = file.names3[,2],
+  Camera = file.names3[,3],
+  Year = Year,
+  Month = Month, 
+  Day = Day,
+  Hour = Hour,
+  Minute = Minute,
+  Seconds = Seconds 
+)
+```
+
+For this exercise, I saw a pattern of underscores and needed to replace those with periods to make the list more
+consistent. So, I replaced all underscores with periods using the str_replace_all function. Next, I need to split all the
+words in between the periods and separate each of them into six columns. To do this, I needed to use the str_split_fixed
+function. Then, I needed to actually split the the fourth column into the Year, Month, Day, and the fifth column into
+Hour, Minute, and Seconds. To do this, I used the str_sub function and used the brackets, specifically putting the column
+number after the comma which indicates that I want to grab the column. Using the start and end function within the str_sub
+function makes it so that I can split specific characters. Finally, I set all of these to a vector, which I used to create
+the data frame. 
+
+
+## Exercise 3 
+
+The full text from Lincoln’s Gettysburg Address is given below. It has been provided in a form that includes lots of different types of white space. Your goal is to calculate the mean word length of Lincoln’s Gettysburg Address! Note: you may consider ‘battle-field’ as one word with 11 letters or as two words ‘battle’ and ‘field’. The first option a bit more difficult and technical!.
+
+```{r}
+Gettysburg <- c('Four score and seven years ago our fathers brought forth on this 
+continent, a new nation, conceived in Liberty, and dedicated to the proposition 
+that all men are created equal.
+
+Now we are engaged in a great civil war, testing whether that nation, or any 
+nation so conceived and so dedicated, can long endure. We are met on a great 
+battle-field of that war. We have come to dedicate a portion of that field, as 
+a final resting place for those who here gave their lives that that nation might 
+live. It is altogether fitting and proper that we should do this.
+
+But, in a larger sense, we can not dedicate -- we can not consecrate -- we can 
+not hallow -- this ground. The brave men, living and dead, who struggled here, 
+have consecrated it, far above our poor power to add or detract. The world will 
+little note, nor long remember what we say here, but it can never forget what 
+they did here. It is for us the living, rather, to be dedicated here to the 
+unfinished work which they who fought here have thus far so nobly advanced. It 
+is rather for us to be here dedicated to the great task remaining before us -- 
+that from these honored dead we take increased devotion to that cause for which 
+they gave the last full measure of devotion -- that we here highly resolve that 
+these dead shall not have died in vain -- that this nation, under God, shall 
+have a new birth of freedom -- and that government of the people, by the people, 
+for the people, shall not perish from the earth.') 
+
+Gettysburg1 <- str_replace_all(Gettysburg, pattern = '\\W+', replacement = ' ') 
+Gettysburg2 <- str_split(Gettysburg1, pattern = '\\s+')[[1]] 
+
+GettysburgMean <- function(Gettysburg2) {
+y <- (str_length(Gettysburg2))
+sumlength <- sum(y) 
+wordlength <- length(Gettysburg2)[[1]] ## I couldn't figure out how to check the characters within the length to remove the
+## 273rd word. I spent two hours on R script and I still couldn't figure it out.
+    totalmean <- (sumlength / wordlength)
+    return(totalmean)
+    }
+
+
+GettysburgMean(Gettysburg2) 
+```
+
+For this exercise, I needed to remove all nonalphanumeric characters within the speech. I did this by using the str_replace_all command, and replaced all of those characters with white spaces. Then, I needed to make a new 
+vector to split all of the white spaces so it could give me all the words in between the white spaces. Then, 
+I created a function to calculate the average word length in the speech. To do this, I set the y function to the 
+str_length to give me all the number of characters in each word. Then, I needed the sum of all the characters in the 
+speech, so I created the sum command. Underneath, I created a new vector wordlength, that gave me the total amount of 
+words in the speech. Then, I needed to create the equation, which is shown by sumlength / wordlength. 
+
+---
+title: "Assignment 5"
+author: "JR Soriano"
+date: "2026-10-26"
+output: pdf_document
+---
+
+```{r setup, include=FALSE} 
+suppressPackageStartupMessages({
+  library(tidyverse, quietly = TRUE)
+  library(dplyr, quietly = TRUE) 
+  library(stringr, quietly = TRUE)
+  library(refinr, quietly = TRUE) 
+  library(lubridate, quietly = TRUE)
+})
+library(tidyverse) 
+library(dplyr)
+library(stringr)
+library(refinr) 
+library(lubridate) 
+
+``` 
+
+## Exercise One 
+
+Convert the following to date or date/time objects.
+
+### a) 
+
+September 13, 2010 
+
+```{r}
+make_date(month=09, day=13, year=2010) 
+```
+
+
+For this subquestion, I converted the date of September 13th, 2010 to 2010-09-13 by using the make_date function and 
+typing out the corresponding dates. 
+
+### b) 
+
+Sept 13, 2010 
+
+```{r}
+# mdy('Sept 13, 2010')
+```
+
+This failed to run and came with an output of "NA" because of "Sept". The system doesn't recognize the month of September
+with an extra T. So, you have to either put "Sep" or fully write out "September" to successfully have an output. 
+
+### c) 
+
+Sep 13, 2010
+
+```{r}
+mdy('Sep 13, 2010')
+```
+
+For this subquestion, I used the lubridate function of the mdy format to output the date. This worked because the system 
+recognizes that "Sep" is September, whereas in the previous subquestion it doesn't recognize "Sept" as September. 
+
+### d) 
+
+S 13, 2010. Comment on the month abbreviation needs.
+
+```{r}
+# mdy('S 13, 2010')
+```
+
+For this subquestion, the following code failed because the system doesn't recognize that "S" is supposed to be 
+"September" or "Sep". 
+
+### e) 
+
+07-Dec-1941 
+
+```{r}
+dmy('07-Dec-1941')
+```
+
+For this subquestion, I used the lubridate function "dmy". Within the function, I added the date "07-Dec-1941" and it 
+successfully gave me the output of that date. 
+
+### f)
+
+ 1-5-1998. Comment on why you might be wrong.
+ 
+```{r}
+mdy('1-5-1998')
+dmy('1-5-1998') 
+```
+ 
+ This is wrong because we don't know whether or not the month and year are flipped, and vice versa. We don't know if the
+ format is month, day, year or day, month, year. 
+ 
+### g) 
+ 
+21-5-1998. Comment on why you know you are correct.
+
+```{r}
+dmy('21-5-1998')
+```
+
+This should be correct because we can assume that the day is the first letter or the 21st, because there are no 21 months.
+The second number is the month. 
+
+### h)
+
+2020-May-5 10:30 am
+
+```{r}
+ymd_hm('2020-May-5 10:30 AM')
+```
+
+For this subquestion, I used the "ymd_hm" function to add the date and time. 
+
+### i) 
+
+2020-May-5 10:30 am PDT (ex Seattle)
+
+```{r}
+# ymd('2020-May-5 10:30 AM', tz='PDT')
+```
+
+This failed because the function doesn't recognize the timezone "PDT", probably because the timezone is used for one half 
+of the year. To fix this, you need to do a main timezone. 
+
+### j) 
+
+2020-May-5 10:30 am AST (ex Puerto Rico)
+
+```{r}
+# ymd('2010-May-5, 10:30 AM', tz='AST')
+```
+
+This failed because the function doesn't recognize the timezone "AST" because it's a seasonal timezone. 
+
+## Exercise 3 
+
+Suppose you have arranged for a phone call to be at 3 pm on May 8, 2025 at Arizona time. However, the recipient will be in Auckland, NZ. What time will it be there?
+
+```{r}
+phonecall <- mdy_hm('May 8, 2025 3:00 PM', tz='US/Arizona') 
+with_tz(phonecall, tz='Pacific/Auckland') 
+```
+
+The time in Arizona converted to New Zealand is May 9th, 2025 at 10:00 AM NZST. 
+
+## Exercise 4 
+
+From this book’s GitHub directory, navigate to the data-raw directory and then download the Pulliam_Airport_Weather_Station.csv data file. (There are several weather station files. Make sure you get the correct one!) There is a DATE column (is it of type date when you import the data?) as well as the Maximum and Minimum temperature. For the last 5 years of data included in the file, plot the time series of daily maximum temperature with date on the x-axis. Write your code so that it will work if I update the date set. Hint: Find the maximum date in the data set and then subtract 5 years. Will there be a difference if you use dyears(5) vs years(5)? Which seems more appropriate here?
+
+```{r}
+weather <- read.csv(
+  file = '~/STA445/data-raw/Pulliam_Airport_Weather_Station.csv'
+  ) 
+```
+
+```{r}
+weather2 <- weather %>% mutate(DATE = ymd(DATE)) # Weather piped to mutate the date column into ymd date
+
+maxdate <- weather2$DATE %>% max() # Using the weather2 vector, we need to find the max date, so we pipe it to give us the maximum -
+# without looking at thousands of rows to see the maximum. We add this to the vector maxdate. 
+
+mindate <- maxdate - years(5) # We subtract the maximum date by five years to get the exact date five years ago. We use years and not
+# dyears because dyears accounts for leap years. We add this to the vector mindate. 
+
+weather3 <- weather2 %>% filter(DATE >= mindate) # We make a new vector, weather3, so that we can use the filter function to only give
+# us the data everything over the minimum date. 
+
+ggplot(weather3, aes(x = DATE, y = TMAX)) +
+  geom_point(color = 'blue') +
+  labs(title = 'Maximum Daily Temperature Over the Years') +
+  labs(x = 'Years', y = 'Daily Maximum Temperature')
+```
+
+For exercise 4, I needed to create a code so it can give me the maximum date in the file so I wouldn't have to go through the long 
+list of information to see what the maximum date is. Then, I needed to figure out what the date was exactly five years ago. So,
+I used the years function and subtracted it from the maximum date. Then, I only want the information in my graph to only be everything 
+for the last five years, so I do that by creating a vector called weather3, piping weather 2 to filter out everything that's above 
+the minimum date so it will only give me the minimum date. 
+
+## Exercise 5 
+
+### a)  
+
+Using the mosaicData package, load the data set Births78 which records the number of children born on each day in the United States in 1978. Because this problem is intended to show how to calculate the information using the date, remove all the columns except date and births.
+
+```{r}
+library(mosaicData) 
+
+births <- data(Births78) # Add the births78 data set to the births vector. 
+
+births2 <- Births78 %>% dplyr::select(date, births) # We only need to the columns date and births, so I use the select command to only
+# use the date and births columns. I added this to the vector births2. 
+```
+
+For subquestion a, I added the births78 data set to the births vector. Then, I made a new vector, called "births2", and piped
+births78 to select only the date and the births columns. 
+
+### b) 
+
+Graph the number of births vs the date with date on the x-axis. What stands out to you? Why do you think we have this trend?
+
+```{r}
+ggplot(births2, aes(x = date, y = births)) + 
+  geom_point()
+```
+
+For subquestion b, what stands out to me is that there are two trends on the graph, one higher than the lower but they still 
+relatively go the same direction. I noticed that, on the graph, there was a dip around June. I think we have this trend is because
+on specific days, births are lower than other days in the week. 
+
+### c) 
+
+To test your assumption, we need to figure out the what day of the week each observation is. Use dplyr::mutate to add a new column named dow that is the day of the week (Monday, Tuesday, etc). This calculation will involve some function in the lubridate package and the date column.
+
+```{r}
+date1 <- births2 %>% mutate(dow = wday(date, label=TRUE, abbr=FALSE)) # I made a new vector, called date1. I piped the births2 
+# vector to mutate, which I added a new column called "dow". Then, I used the wday function and equaled it to dow so the numbers
+# of the days of the week changes to the actual name of the day. 
+```
+
+For this subquestion, I created a new vector called "date1". I piped births2 to mutate to create a new column using the information 
+from the date column. Then, in order for the dow column to not just be numbers of the week, I changed it so that it would output
+the actual day of the week. 
+
+### d) 
+
+Plot the data with the point color being determined by the day of the week variable.
+
+```{r}
+ggplot(date1, aes(x = date, y = births)) + 
+  geom_point(aes(color = dow)) +
+  labs(title = 'Births per Day') +
+  labs(x = 'Month and Year', y = 'Number of Births') +
+  labs(color = 'Days of the Week') 
+  
+  
+```
+
+For this subquestion, I created the graph by using the new "data1" data set. I set the x to be the date and the y to be the births.
+Next, I wanted to make it so that every day of the week is shown with a different color, so within the geom_point function, 
+I made it so that the color equaled to the dow column. Then, I changed the names of the axis, the title, and the title of dow
+so it can look better. 
+
+---
+title: "Assignment Six"
+author: "JR Soriano"
+date: "2026-10-30"
+output: pdf_document
+---
+
+```{r setup, include=FALSE} 
+suppressPackageStartupMessages({
+  library(tidyverse, quietly = TRUE)
+  library(dplyr, quietly = TRUE) 
+  library(stringr, quietly = TRUE)
+  library(refinr, quietly = TRUE) 
+  library(lubridate, quietly = TRUE)
+})
+library(tidyverse) 
+library(dplyr)
+library(stringr)
+library(refinr) 
+library(lubridate) 
+
+``` 
+
+## Exercise One
+
+A common task is to take a set of data that has multiple categorical variables and create a table of the number of cases for each combination. An introductory statistics textbook contains a data set summarizing student surveys from several sections of an intro class. The two variables of interest are Gender and Year which are the students gender and year in college. Note: you will need to refer to Chapter 4 and Chapter 7 for some of the operations needed below - this is a great time to review chapter 4!
+
+### a)
+
+Download the data set using the following:
+
+```{r}
+Survey <- read.csv('https://www.lock5stat.com/datasets2e/StudentSurvey.csv', na.strings=c('',' ')) 
+```
+
+### b) 
+
+Select the specific columns of interest Year and Gender
+
+```{r}
+survey2 <- Survey %>% dplyr::select(Year, Gender) 
+# Make a new vector, survey2, and piped survey to specifically pick the columns Year and Gender. 
+```
+
+### c) 
+
+Convert the Year column to factors and properly order the factors based on common US progression (FirstYear - Sophomore - Junior - Senior)
+
+```{r}
+highschool <- survey2 %>% mutate( Year = fct_relevel(Year, 'FirstYear', 'Sophomore', 'Junior', 'Senior'))
+
+# Made a new vector, called highschool, and piped survey2 to mutate the year to factors using the fct_relevel function. 
+```
+
+For subquestion c, I created a new vector called highschool. Then, I used survey2 and piped it to mutate. Finally, I used the 
+fct_relevel function to properly reorder it to what the question asked. 
+
+### d)
+
+Convert the Gender column to factors and rename them Male/Female.
+
+```{r}
+highschool2 <- highschool %>% mutate(    # Made a new vector, highschool2. Piped highschool to mutate Gender.
+  Gender = fct_recode(Gender, 'Male' = 'M'), # Used the fct_recode function to manually change M to Male and F to Female. 
+  Gender = fct_recode(Gender, 'Female' = 'F')
+)
+```
+
+For subquestion d, I created a new vector called highschool2. I piped the highschool data to mutate the gender column. Then, 
+I used the fct_recode function to manually change M and F to Male and Female respectively. 
+
+### e) 
+
+Produce a data set with eight rows and three columns that contains the number of responses for each gender:year combination. You might want to look at the following functions: dplyr::count and dplyr::drop_na.
+
+```{r}
+highschool3 <- highschool2 %>% # Made a new vector, highschool3, and piped highschool2 to group by Gender and Year. 
+  # Then, piped it to summarize and count by group. 
+  group_by(Gender, Year) %>%
+  summarize(n = n()
+  )
+
+highschool4 <- highschool3 %>% drop_na() # Made a new vector, highschool4. I piped highschool 3 to drop anywhere there is NA. 
+
+highschool4
+```
+
+For subquestion e, I made a new vector called highschool3. I piped highschool2 to groupby Gender and Year. Then, I used the 
+summarize function to group by the groups. Then, I made another vector called highschool4, where I piped highschool3 to drop
+all groups that contain missing information. 
+
+### f) 
+
+Pivot the table in part (e) to produce a table of the number of responses in the following form:
+
+```{r}
+highschool4 %>% pivot_wider(names_from = Year, values_from = n) 
+# piped highschool4 to pivot_wider, where I wanted the grade levels on the first row and the number of responses under. 
+# The gender should automatically be their own column as well. 
+```
+
+For subquestion f, I piped highschool4 to the pivot_wider command. I used the names_from and the values_from functions to make it so 
+that the names are on the top and the total number of responses are the rows. 
+
+## Exercise 3 
+
+For this problem we will consider two simple data sets.
+
+```{r}
+A <- tribble(
+  ~Name, ~Car,
+  'Alice', 'Ford F150',
+  'Bob',   'Tesla Model III',
+  'Charlie', 'VW Bug')
+
+B <- tribble(
+  ~First.Name, ~Pet,
+  'Bob',  'Cat',
+  'Charlie', 'Dog',
+  'Alice', 'Rabbit')
+```
+
+### a) 
+
+Combine the data frames together to generate a data set with three rows and three columns using join commands.
+
+```{r}
+AB <- cbind(A, B) # Used cbind to combine columns from multiple datasets into one. 
+
+AB
+```
+
+For subquestion a, I combined the two data frames together using the cbind function. 
+
+### b) 
+
+It turns out that Alice also has a pet guinea pig. Add another row to the B data set. Do this using either the base function rbind, or either of the dplyr functions add_row or bind_rows.
+
+```{r}
+B2 <- B %>% add_row(First.Name = 'Alice', Pet = 'Guinea Pig')
+
+B2
+```
+
+For subquestion b, I piped the B data set to add a new row. 
+
+### c) 
+
+ Combine again the A and B data sets together to generate a data set with four rows and three columns using join commands.
+
+```{r}
+full_join(A, B2, by = c("Name" = "First.Name")) # Used the full_join command to, along with the "by = c" command to associate the 
+# Name column with First.Name column in the other data set. 
+```
+
+For this subquestion, I combined the A and B data sets together using the full_join command and I used the "by = c" command 
+within that command. This created four rows and three columns. 
+
+## Exercise 4 
+
+The package nycflights13 contains information about all the flights that arrived in or left from New York City in 2013. This package contains five data tables, but there are three data tables we will work with. The data table flights gives information about a particular flight, airports gives information about a particular airport, and airlines gives information about each airline. Create a table of all the flights on February 14th by Virgin America that has columns for the carrier, destination, departure time, and flight duration. Join this table with the airports information for the destination. Notice that because the column for the destination airport code doesn’t match up between flights and airports, you’ll have to use the by=c("TableA.Col"="TableB.Col") argument where you insert the correct names for TableA.Col and TableB.Col.
+
+```{r}
+library(nycflights13)
+
+data(flights)
+
+flights1 <- flights %>% filter(year == 2014, )
+flights1
+
+flights2 <- flights1 %>% filter(day == 2)
+
+flights2
+
+flights3 <- flights2 %>% dplyr::select(carrier, dest, dep_time, air_time) %>% filter(carrier == "VX") # Piped to select 
+# specific columns and filter ony for the Virginia America airline. 
+
+flights3
+
+airlines %>% filter(name == "Virgin America") # Found what the carrier name is using the filter command for Virgin America.
+
+
+
+
+```
+
+
+---
+title: "Assignment Seven"
+author: "JR Soriano"
+output: pdf_document
+date: "2026-11-09"
+---
+
+```{r setup, include=FALSE} 
+suppressPackageStartupMessages({
+  library(tidyverse, quietly = TRUE)
+  library(dplyr, quietly = TRUE) 
+  library(stringr, quietly = TRUE)
+  library(refinr, quietly = TRUE) 
+  library(lubridate, quietly = TRUE)
+  library(meme, quietly = TRUE)
+})
+library(tidyverse) 
+library(dplyr)
+library(stringr)
+library(refinr) 
+library(lubridate) 
+library(meme) 
+
+``` 
+
+## Exercise Two
+
+Using the datasets::trees data, complete the following. This question refreshes create a linear model, graphing the linear model, and introduces using some LaTeX expressions on the graph.
+
+### a) 
+
+Create a regression model for $y=$ `Volume` as a function of $x=$ `Height`.
+
+```{r}
+model.trees <- lm(Volume ~ Height, data=trees)
+```
+
+For this subquestion, I used the lm command and put it in a vector, "model.trees". Then, I used the lm function, with the volume
+in front of the ~ sign to indicate that the volyme is a function of the height. 
+
+### b) 
+
+Display the summary of the model to view the y-intercept and slope of the regression line.
+
+```{r}
+summary(model.trees)
+```
+
+### c) 
+
+Using ggplot2, create a scatter plot of Volume vs Height.
+
+```{r}
+ggplot(trees, aes(x = Height, y = Volume)) +
+  geom_point()
+```
+
+### d) 
+
+Color the scatter using the Girth variable.
+
+```{r}
+trees2 <- ggplot(trees, aes(x = Height, y = Volume, color = Girth)) +
+  geom_point() 
+```
+
+### e) 
+
+Modify the color scheme using a RColorBrewer palette.
+
+```{r}
+
+
